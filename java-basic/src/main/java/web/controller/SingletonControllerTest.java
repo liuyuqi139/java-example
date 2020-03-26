@@ -1,4 +1,4 @@
-package controller;
+package web.controller;
 
 import org.springframework.context.annotation.Scope;
 import org.springframework.web.bind.annotation.GetMapping;
