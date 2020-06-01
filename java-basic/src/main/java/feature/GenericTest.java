@@ -1,5 +1,6 @@
 package feature;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -92,13 +93,72 @@ public class GenericTest {
      */
     public static class TypeLimitForMethod2 {
         public static void main(String[] args) {
-            List<? extends Integer> numbers = Arrays.asList(1, 2);
+            List<? extends Number> numbers = Arrays.asList(1, 2.2);
 //            numbers.add(1); // 会报错
+            Number number = numbers.get(0);
             numbers.forEach(System.out::println);
 
             List<? super Number> numberList = Arrays.asList(1, 2);
 //            Number n = numberList.get(1); // 会报错
+            Object o = numberList.get(1); // 只能存放到Object对象里
             numberList.forEach(System.out::println);
+        }
+    }
+
+    public static class Test2{
+        interface Fruit{
+            void call();
+        }
+
+        static class Banana implements Fruit{
+            @Override
+            public void call() {
+                System.out.println("这是一个香蕉");
+            }
+        }
+
+        static class Apple implements Fruit{
+            @Override
+            public void call() {
+                System.out.println("这是一个苹果");
+            }
+        }
+
+        public void test1(List<Fruit> fruits) {
+            for (Fruit fruit: fruits) {
+                fruit.call();
+            }
+        }
+
+        public void test2(List<? extends Fruit> fruits) {
+//            Apple apple = new Apple();
+//            fruits.add(apple); // 会报错
+            for (Fruit fruit: fruits) {
+                fruit.call();
+            }
+        }
+
+        public static void main(String[] args) {
+//            List<Apple> apples = new ArrayList<>();
+//            List<Fruit> fruits = apples;     //类型转换失败
+//            Test2 test = new Test2();
+//            test.test1(fruits);    //失败
+
+            List<Apple> apples = new ArrayList<>();
+            Apple apple = new Apple();
+            apples.add(apple);
+            List<Fruit> fruits = new ArrayList<>(apples);
+            Banana banana = new Banana();
+            fruits.add(banana);
+            Test2 test = new Test2();
+            test.test1(fruits);
+            test.test2(fruits);
+
+//            List<Apple> apples = new ArrayList<>();
+//            Apple apple = new Apple();
+//            apples.add(apple);
+//            Test2 test = new Test2();
+//            test.test2(apples);
         }
     }
 }

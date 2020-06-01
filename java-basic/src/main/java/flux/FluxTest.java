@@ -1,16 +1,21 @@
 package flux;
 
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.junit.Test;
+import org.reactivestreams.Subscriber;
+import org.reactivestreams.Subscription;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 import reactor.test.StepVerifier;
 
 import java.time.Duration;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
 /**
@@ -36,6 +41,30 @@ public class FluxTest {
         Flux.just(1, 2, 3, 4, 5, 6).subscribe(System.out::print);
         System.out.println();
         Mono.just(1).subscribe(System.out::println);
+
+        Flux.just(1, 2, 3, 4, 5).subscribe(new Subscriber<Integer>() { // 1 Subscriber通过匿名内部类定义，其中需要实现接口的四个方法
+
+            @Override
+            public void onSubscribe(Subscription s) {
+                System.out.println("onSubscribe");
+                s.request(6);   // 2 订阅时请求6个元素。
+            }
+
+            @Override
+            public void onNext(Integer integer) {
+                System.out.println("onNext:" + integer);
+            }
+
+            @Override
+            public void onError(Throwable t) {
+
+            }
+
+            @Override
+            public void onComplete() {
+                System.out.println("onComplete");
+            }
+        });
     }
 
     @Test
@@ -156,6 +185,142 @@ public class FluxTest {
         countDownLatch.await(10, TimeUnit.SECONDS);
     }
 
+    /**
+     * 使用SynchronousSink生成数据流
+     * 1用于计数；
+     * 2向“池子”放自定义的数据；
+     * 3告诉generate方法，自定义数据已发完；
+     * 4触发数据流。
+     */
+    @Test
+    public void testGenerate1() {
+        final AtomicInteger count = new AtomicInteger(1);   // 1
+        Flux.generate(sink -> {
+            sink.next(count.get() + " : " + new Date());   // 2
+            try {
+                TimeUnit.SECONDS.sleep(1);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            if (count.getAndIncrement() >= 5) {
+                sink.complete();     // 3
+            }
+        }).subscribe(System.out::println);  // 4
+    }
+
+    /**
+     * 1初始化状态值；
+     * 2第二个参数是BiFunction，输入为状态和sink；
+     * 3每次循环都要返回新的状态值给下次使用。
+     */
+    @Test
+    public void testGenerate2() {
+        Flux.generate(
+                () -> 1,    // 1
+                (count, sink) -> {      // 2
+                    sink.next(count + " : " + new Date());
+                    try {
+                        TimeUnit.SECONDS.sleep(1);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    if (count >= 5) {
+                        sink.complete();
+                    }
+                    return count + 1;   // 3
+                }).subscribe(System.out::println);
+    }
+
+    /**
+     * 1初始化状态值；
+     * 2第二个参数是BiFunction，输入为状态和sink；
+     * 3每次循环都要返回新的状态值给下次使用。
+     * 4最后将count值打印出来。
+     */
+    @Test
+    public void testGenerate3() {
+        Flux.generate(
+                () -> 1,    // 1
+                (count, sink) -> {      // 2
+                    sink.next(count + " : " + new Date());
+                    try {
+                        TimeUnit.SECONDS.sleep(1);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    if (count >= 5) {
+                        sink.complete();
+                    }
+                    return count + 1;   // 3
+                }, System.out::println) //4
+                .subscribe(System.out::println);
+    }
+
+    class MyEventSource {
+        private List<MyEventListener> listeners;
+
+        public MyEventSource() {
+            this.listeners = new ArrayList<>();
+        }
+
+        public void register(MyEventListener listener) {    // 1
+            listeners.add(listener);
+        }
+
+        public void newEvent(MyEvent event) {
+            for (MyEventListener listener :
+                    listeners) {
+                listener.onNewEvent(event);     // 2
+            }
+        }
+
+        public void eventStopped() {
+            for (MyEventListener listener :
+                    listeners) {
+                listener.onEventStopped();      // 3
+            }
+        }
+
+        @Data
+        @NoArgsConstructor
+        @AllArgsConstructor
+        class MyEvent {   // 4
+            private Date timeStemp;
+            private String message;
+        }
+    }
+
+    interface MyEventListener {
+        void onNewEvent(MyEventSource.MyEvent event);
+        void onEventStopped();
+    }
+
+    @Test
+    public void testCreate() throws InterruptedException {
+        MyEventSource eventSource = new MyEventSource();    // 1
+        Flux.create(sink -> {
+                    eventSource.register(new MyEventListener() {    // 2
+                        @Override
+                        public void onNewEvent(MyEventSource.MyEvent event) {
+                            sink.next(event);       // 3
+                        }
+
+                        @Override
+                        public void onEventStopped() {
+                            System.out.println("complete");
+                            sink.complete();        // 4
+                        }
+                    });
+                }
+        ).subscribe(System.out::println);       // 5
+
+        for (int i = 0; i < 20; i++) {  // 6
+            Random random = new Random();
+            TimeUnit.MILLISECONDS.sleep(random.nextInt(1000));
+            eventSource.newEvent(new MyEventSource().new MyEvent(new Date(), "Event-" + i));
+        }
+        eventSource.eventStopped(); // 7
+    }
 
     private Flux<Integer> generateFluxFrom1To6() {
         return Flux.just(1, 2, 3, 4, 5, 6);
