@@ -29,7 +29,7 @@ public class ForkJoinTest {
         protected Long compute() {
 
             // 当需要计算的数字个数小于6时，直接采用for loop方式计算结果
-            if (to - from < 6) {
+            if (to - from < 100) {
                 long total = 0;
                 for (int i = from; i <= to; i++) {
                     total += numbers[i];
@@ -66,10 +66,10 @@ public class ForkJoinTest {
         Instant end = Instant.now();
         System.out.println("耗时：" + Duration.between(start, end).toMillis() + "ms");
 
-        start = Instant.now();
+        /*start = Instant.now();
         long result = LongStream.rangeClosed(0, 10000000L).parallel().reduce(0, Long::sum);
         end = Instant.now();
         System.out.println("结果为：" + result);
-        System.out.println("耗时：" + Duration.between(start, end).toMillis() + "ms");
+        System.out.println("耗时：" + Duration.between(start, end).toMillis() + "ms");*/
     }
 }

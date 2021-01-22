@@ -1,3 +1,5 @@
+package interview;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -33,6 +35,9 @@ public class Solution {
         }
     }
 
+    /**
+     * 股票最大收益
+     */
     static class StockProfit {
         static int maxProfit(int[] prices) {
             int minPrice = Integer.MAX_VALUE;

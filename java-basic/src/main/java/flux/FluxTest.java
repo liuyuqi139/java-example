@@ -1,8 +1,5 @@
 package flux;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 import org.junit.Test;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
@@ -12,7 +9,9 @@ import reactor.core.scheduler.Schedulers;
 import reactor.test.StepVerifier;
 
 import java.time.Duration;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -28,7 +27,7 @@ public class FluxTest {
         Mono.just(1);
 
         // 基于数组、集合和Stream生成
-        Integer[] array = new Integer[]{1,2,3,4,5,6};
+        Integer[] array = new Integer[]{1, 2, 3, 4, 5, 6};
         Flux.fromArray(array);
         List<Integer> list = Arrays.asList(array);
         Flux.fromIterable(list);
@@ -38,16 +37,18 @@ public class FluxTest {
 
     @Test
     public void example1() {
-        Flux.just(1, 2, 3, 4, 5, 6).subscribe(System.out::print);
-        System.out.println();
-        Mono.just(1).subscribe(System.out::println);
+//        Flux.just(1, 2, 3, 4, 5, 6).subscribe(System.out::print);
+//        System.out.println();
+//        Mono.just(1).subscribe(System.out::println);
 
         Flux.just(1, 2, 3, 4, 5).subscribe(new Subscriber<Integer>() { // 1 Subscriber通过匿名内部类定义，其中需要实现接口的四个方法
 
             @Override
             public void onSubscribe(Subscription s) {
                 System.out.println("onSubscribe");
-                s.request(6);   // 2 订阅时请求6个元素。
+//                s.request(6);   // 2 订阅时请求6个元素。
+//                s.request(5);   // 2 订阅时请求5个元素。
+//                s.request(3);   // 2 订阅时请求3个元素。，不会触发onComplete
             }
 
             @Override
@@ -86,7 +87,7 @@ public class FluxTest {
 
     /**
      * map - 元素映射为新元素
-     *
+     * <p>
      * Flux.range(1, 6)用于生成从“1”开始的，自增为1的“6”个整型数据；
      * map接受lambdai -> i * i为参数，表示对每个数据进行平方；
      * 验证新的序列的数据；
@@ -103,7 +104,7 @@ public class FluxTest {
 
     /**
      * flatMap - 元素映射为流
-     *
+     * <p>
      * 对于每一个字符串s，将其拆分为包含一个字符的字符串流；
      * 对每个元素延迟100ms；
      * 对每个元素进行打印（注doOnNext方法是“偷窥式”的方法，不会消费数据流）；
@@ -122,7 +123,7 @@ public class FluxTest {
 
     /**
      * filter - 过滤
-     *
+     * <p>
      * filter的lambda参数表示过滤操作将保留奇数；
      * 验证仅得到奇数的平方。
      */
@@ -143,7 +144,7 @@ public class FluxTest {
 
     /**
      * zip - 一对一合并
-     *
+     * <p>
      * 将英文说明用空格拆分为字符串流；
      * 定义一个CountDownLatch，初始为1，则会等待执行1次countDown方法后结束，不使用它的话，测试方法所在的线程会直接返回而不会等待数据流发出完毕；
      * 使用Flux.interval声明一个每200ms发出一个元素的long数据流；因为zip操作是一对一的，故而将其与字符串流zip之后，字符串流也将具有同样的速度；
@@ -172,7 +173,7 @@ public class FluxTest {
 
     /**
      * 将同步的阻塞调用变为异步的
-     *
+     * <p>
      * 使用fromCallable声明一个基于Callable的Mono；
      * 使用subscribeOn将任务调度到Schedulers内置的弹性线程池执行，弹性线程池会为Callable的执行任务分配一个单独的线程
      */
@@ -256,75 +257,10 @@ public class FluxTest {
                 .subscribe(System.out::println);
     }
 
-    class MyEventSource {
-        private List<MyEventListener> listeners;
-
-        public MyEventSource() {
-            this.listeners = new ArrayList<>();
-        }
-
-        public void register(MyEventListener listener) {    // 1
-            listeners.add(listener);
-        }
-
-        public void newEvent(MyEvent event) {
-            for (MyEventListener listener :
-                    listeners) {
-                listener.onNewEvent(event);     // 2
-            }
-        }
-
-        public void eventStopped() {
-            for (MyEventListener listener :
-                    listeners) {
-                listener.onEventStopped();      // 3
-            }
-        }
-
-        @Data
-        @NoArgsConstructor
-        @AllArgsConstructor
-        class MyEvent {   // 4
-            private Date timeStemp;
-            private String message;
-        }
-    }
-
-    interface MyEventListener {
-        void onNewEvent(MyEventSource.MyEvent event);
-        void onEventStopped();
-    }
-
-    @Test
-    public void testCreate() throws InterruptedException {
-        MyEventSource eventSource = new MyEventSource();    // 1
-        Flux.create(sink -> {
-                    eventSource.register(new MyEventListener() {    // 2
-                        @Override
-                        public void onNewEvent(MyEventSource.MyEvent event) {
-                            sink.next(event);       // 3
-                        }
-
-                        @Override
-                        public void onEventStopped() {
-                            System.out.println("complete");
-                            sink.complete();        // 4
-                        }
-                    });
-                }
-        ).subscribe(System.out::println);       // 5
-
-        for (int i = 0; i < 20; i++) {  // 6
-            Random random = new Random();
-            TimeUnit.MILLISECONDS.sleep(random.nextInt(1000));
-            eventSource.newEvent(new MyEventSource().new MyEvent(new Date(), "Event-" + i));
-        }
-        eventSource.eventStopped(); // 7
-    }
-
     private Flux<Integer> generateFluxFrom1To6() {
         return Flux.just(1, 2, 3, 4, 5, 6);
     }
+
     private Mono<Integer> generateMonoWithError() {
         return Mono.error(new Exception("some error"));
     }

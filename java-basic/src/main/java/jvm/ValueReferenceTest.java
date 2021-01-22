@@ -7,19 +7,26 @@ import java.util.Map;
  * 值引用
  */
 public class ValueReferenceTest {
-    static class ArrayTest {
+    static class VariableAssignTest {
         public static void main(String[] args) {
             int[] a = new int[1];
-            int[] b = a;
-            b[0] = 1;
-            System.out.println(b[0]);
+            a[0] = 2;
             System.out.println(a[0]);
+            int[] b = a;
+            b[0] = 1;   // 等价于 a[0] = 1;
+            System.out.println(a[0]);
+            System.out.println(b[0]);
 
             int c = 1;
             int d = c;
             d = 2;
             System.out.println(c);
             System.out.println(d);
+
+            int i;
+            if ((i = 3) > 2) {
+                System.out.println(i);
+            }
         }
     }
 
@@ -27,7 +34,9 @@ public class ValueReferenceTest {
         public static void main(String[] args) {
             Map<String, String> map = new HashMap<>();
             Map<String, String> map2 = map;
+            System.out.println(map == map2);
             map2.put("1", "1");
+            System.out.println(map == map2);
             System.out.println(map.get("1"));
             System.out.println(map2.get("1"));
         }
@@ -124,8 +133,12 @@ public class ValueReferenceTest {
             String a = new String("a");
             String a1 = a.intern();
             String b = "a";
+            System.out.println(a1 == a);
             System.out.println(a == b);
             System.out.println(a1 == b);
+            // false
+            // false
+            // true
         }
     }
 }
