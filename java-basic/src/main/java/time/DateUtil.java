@@ -4,6 +4,8 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Calendar;
+import java.util.Date;
 
 /**
  * 日期格式化辅助类
@@ -42,5 +44,15 @@ public final class DateUtil {
         }
         DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(PATTERN_YYYY_MM_DD_HH_SS);
         return dateTimeFormatter.format(localDateTime);
+    }
+
+    /**
+     * 日期上加小时
+     */
+    public static Date addDateHour(Date date, Integer hours){
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(date);
+        cal.add(Calendar.HOUR, hours);
+        return cal.getTime();
     }
 }

@@ -3,7 +3,6 @@ package current;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.util.CollectionUtils;
 import util.ThreadPoolUtil;
 
 import java.util.Collections;
@@ -289,5 +288,30 @@ class ThreadPoolExceptionTest3 {
 //            log.error("do2异常", e);
 //        }
         return atomicInteger.get();
+    }
+}
+
+/**
+ * SynchronousQueue没有容量，是无缓冲等待队列，是一个不存储元素的阻塞队列，会直接将任务交给消费者，必须等队列中的添加元素被消费后才能继续添加新的元素
+ */
+@Slf4j
+class SynchronousQueueTest {
+    //任务超过maximumPoolSizes，回报RejectedExecutionException
+    private static ExecutorService cachedThreadPool = new ThreadPoolExecutor(4, Runtime.getRuntime().availableProcessors() * 2, 0, TimeUnit.MILLISECONDS, new SynchronousQueue<>(), r -> new Thread(r, "ThreadTest"));
+//    private static ExecutorService cachedThreadPool = new ThreadPoolExecutor(4, Integer.MAX_VALUE, 0, TimeUnit.MILLISECONDS, new SynchronousQueue<>(), r -> new Thread(r, "ThreadTest"));
+
+    public static void main(String[] args) {
+        AtomicInteger atomicInteger = new AtomicInteger();
+        for (int i = 0; i < 200; i++) {
+            cachedThreadPool.execute(() -> {
+                log.info("start：{}", atomicInteger.incrementAndGet());
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    log.error("InterruptedException", e);
+                }
+                log.info("end");
+            });
+        }
     }
 }

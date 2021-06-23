@@ -26,5 +26,7 @@ public class BigDecimalTest {
         System.out.println(new BigDecimal("0.1").compareTo(BigDecimal.ZERO) > 0);  //true
 
         System.out.println(new BigDecimal("2.1156").divide(d, 2, 4));
+
+        System.out.println(new BigDecimal("100.000").toString());
     }
 }

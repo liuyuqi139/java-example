@@ -1,6 +1,8 @@
 package collection;
 
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
+import util.json.JSONUtils;
 
 import java.math.BigDecimal;
 import java.util.*;
@@ -116,6 +118,17 @@ class CollectionForeachTest {
 
 @Slf4j
 class CollectionSortTest {
+    @Data
+    public static class BookVersionAggrVo {
+        private Long id;
+
+        private String name;
+
+        private boolean availableSale = false;
+
+        private Long courseId;
+    }
+
     public static void main(String[] args) {
         List<Long> roleIds = new ArrayList<>();
         roleIds.add(2L);
@@ -151,6 +164,60 @@ class CollectionSortTest {
 
         orderNoList.sort(Comparator.comparing(String::new));
         orderNoList.forEach(log::info);
+
+        List<Integer> integerList = new ArrayList<>();
+        integerList.add(2);
+        integerList.add(1);
+        integerList.add(4);
+        integerList.add(3);
+        //从小到大
+        integerList.sort((o1, o2) -> {
+            if (o1 > o2) {
+                return 1;
+            } else if (o1 < o2) {
+                return -1;
+            } else {
+                return 0;
+            }
+        });
+        integerList.forEach(roleId -> {
+            log.info("custom sort：{}", roleId);
+        });
+
+        //从大到小
+        integerList.sort((o1, o2) -> {
+            if (o1 > o2) {
+                return -1;
+            } else if (o1 < o2) {
+                return 1;
+            } else {
+                return 0;
+            }
+        });
+        integerList.forEach(roleId -> {
+            log.info("custom sort2：{}", roleId);
+        });
+
+        List<BookVersionAggrVo> bookVersionAggrVoList = new ArrayList<>();
+        BookVersionAggrVo bookVersionAggrVo = new BookVersionAggrVo();
+        bookVersionAggrVo.setId(1L);
+        bookVersionAggrVo.setAvailableSale(true);
+        bookVersionAggrVoList.add(bookVersionAggrVo);
+
+        bookVersionAggrVo = new BookVersionAggrVo();
+        bookVersionAggrVo.setId(2L);
+        bookVersionAggrVo.setAvailableSale(false);
+        bookVersionAggrVoList.add(bookVersionAggrVo);
+
+        bookVersionAggrVo = new BookVersionAggrVo();
+        bookVersionAggrVo.setId(3L);
+        bookVersionAggrVo.setAvailableSale(true);
+        bookVersionAggrVoList.add(bookVersionAggrVo);
+
+        bookVersionAggrVoList.sort(Comparator.comparing(BookVersionAggrVo::isAvailableSale).reversed());
+        bookVersionAggrVoList.forEach(bookVersionAggr -> {
+            log.info("bookVersionAggr：{}", JSONUtils.json(bookVersionAggr));
+        });
     }
 }
 
@@ -187,6 +254,8 @@ class MapTest {
         map.put(5L, "5");
         map.put(6L, "6");
         map.put(7L, "7");
+
+        System.out.println(map.get(9L));
 
         map.forEach((aLong, s) -> {
             log.info("key：{}, value：{}", aLong, s);
@@ -266,6 +335,28 @@ class TreeMapTest {
 }
 
 @Slf4j
+class LinkedHashMapTest {
+    public static void main(String[] args) {
+        Map<Long, String> linkedHashMap = new LinkedHashMap<>();
+        linkedHashMap.put(2L, "2");
+        linkedHashMap.put(3L, "3");
+        linkedHashMap.put(1L, "1");
+
+        //有序输出
+        linkedHashMap.forEach((aLong, s) -> {
+            log.info("key：{}, value：{}", aLong, s);
+        });
+
+        //groupingBy有序用LinkedHashMap
+        //key：学年-学期-期次，按照学年、学期、期次分组
+//        Map<String, List<CourseInfoDto>> schoolYearPeriodTeachingTimeMap = courseInfoList.stream().collect(Collectors.groupingBy(
+//                courseInfoDto -> courseInfoDto.getSchoolYear() + "-" + courseInfoDto.getCoursePeriodDtoList().get(0).getPeriod() + "-" + courseInfoDto.getTeachingTime(),
+//                LinkedHashMap::new, Collectors.toList()
+//        ));
+    }
+}
+
+@Slf4j
 class ListTest {
     public static void main(String[] args) {
         List<Integer> list = new ArrayList<>();
@@ -289,21 +380,73 @@ class ListTest {
         list2.add(3);
         list2.add(2);
 
-        System.out.println(list.containsAll(list2));
+        System.out.println(list.containsAll(list2));    //true
 
         List<String> list3 = new ArrayList<>();
         list3.add("a");
         list3.add("b");
         list3.add("c");
+        list3.add("d");
 
         List<String> list4 = new ArrayList<>();
         list4.add("a");
         list4.add("c");
         list4.add("b");
-        System.out.println(list3.containsAll(list4));
+        System.out.println(list3.containsAll(list4));   //true
+        System.out.println(list4.containsAll(list3));   //false
 
         List<String> list5 = new ArrayList<>(list4);
+        System.out.println(list5);
         System.out.println(list5.toString());
-        List<String> list6 = new ArrayList<>(null);
+        List<String> list6 = new ArrayList<>(null); //NullPointerException
+    }
+}
+
+@Slf4j
+class ListArraysTest {
+    //Arrays.asList() 返回java.util.Arrays$ArrayList， 而不是ArrayList。Arrays$ArrayList和ArrayList都是继承AbstractList，remove，add等
+    // method在AbstractList中是默认throw UnsupportedOperationException而且不作任何操作。ArrayList override这些method来对list进行操作，
+    // 但是Arrays$ArrayList没有override remove(int)，add(int)等，所以throw UnsupportedOperationException
+    public static void main(String[] args) {
+        String[] myArray = { "Apple", "Banana", "Orange" };
+        List<String> myList = Arrays.asList(myArray);
+        for (String str : myArray) {
+            //UnsupportedOperationException
+            myList.add(str);
+            myList.add(str);
+        }
+        System.out.println(myList.size());
+    }
+}
+
+@Slf4j
+class ListStoreTest {
+    public static void main(String[] args) {
+        List<Student> list = new ArrayList<>();
+
+        Student student = new Student();
+        student.setName("张三");
+        student.setAge(23);
+
+        list.add(student);
+
+        student.setName("李四");
+        student.setAge(25);
+
+        log.info("list：{}", list);  //name=李四, age=25
+
+        student = new Student();
+        student.setName("张三");
+        student.setAge(23);
+
+        list.add(student);
+
+        log.info("list：{}", list);  //(name=李四, age=25), (name=张三, age=23)
+    }
+
+    @Data
+    static class Student {
+        private String name;
+        private Integer age;
     }
 }
